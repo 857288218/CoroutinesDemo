@@ -7,6 +7,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 class HttpMethods private constructor() {
@@ -37,6 +40,12 @@ class HttpMethods private constructor() {
             try {
                 movieService.loginAsync(userName, pwd)
             } catch (e: Exception) {
+                when (e) {
+                    is ConnectException -> WanResponse(-1, e.message, null)
+                    is SocketTimeoutException -> WanResponse(-1, e.message, null)
+                    is ResponseCodeException -> WanResponse(-1, e.message, null)
+                    is NoRouteToHostException -> WanResponse(-1, e.message, null)
+                }
                 WanResponse(-1, e.message, null)
             }
         }
