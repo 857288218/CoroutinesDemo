@@ -30,8 +30,8 @@ dependencies {
     implementation 'android.arch.lifecycle:extensions:1.1.1'//
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.squareup.retrofit2:retrofit:2.6.1'
-    implementation 'com.squareup.retrofit2:converter-gson:2.6.1'
+    implementation 'com.squareup.retrofit2:retrofit:2.6.2'
+    implementation 'com.squareup.retrofit2:converter-gson:2.6.2'
     //为 Retrofit 添加对 Deferred 的支持
     implementation 'com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2'
     implementation 'com.google.code.gson:gson:2.7'

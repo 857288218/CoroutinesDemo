@@ -19,9 +19,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (userLive == null || userLive?.value == null) {
             userLive = MutableLiveData()
             GlobalScope.launch(Dispatchers.Main) {
-                val data = withContext(Dispatchers.IO) {
-                    HttpMethods.INSTANCES.login(userName, pwd)
-                }
+                //使用协成可以避免回调地狱，如果穿行
+                val data = HttpMethods.INSTANCES.login(userName, pwd)
                 userLive?.value = data.data
             }
         }
