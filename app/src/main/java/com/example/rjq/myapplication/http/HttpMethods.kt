@@ -2,7 +2,6 @@ package com.example.rjq.myapplication.http
 
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
-import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -25,7 +24,6 @@ class HttpMethods private constructor() {
             movieService = Retrofit.Builder()
                     .client(builder.build())
                     .addConverterFactory(GsonConverterFactory.create())
-                    .addCallAdapterFactory(CoroutineCallAdapterFactory.invoke())
                     .baseUrl(BASE_URL)
                     .build()
                     .create(MovieService::class.java)
@@ -37,7 +35,7 @@ class HttpMethods private constructor() {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
         return withContext(Dispatchers.IO) {
             try {
-                movieService.loginAsync(userName, pwd).await()
+                movieService.loginAsync(userName, pwd)
             } catch (e: Exception) {
                 WanResponse(-1, e.message, null)
             }
