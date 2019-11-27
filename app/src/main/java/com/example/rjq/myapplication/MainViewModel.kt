@@ -19,7 +19,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (userLive == null || userLive?.value == null) {
             userLive = MutableLiveData()
             GlobalScope.launch(Dispatchers.Main) {
-                //使用协成可以避免回调地狱，如果穿行
+                //如果串行调用多个接口的话，使用协程可以避免回调地狱；以同步的方式实现异步的逻辑
                 val data = HttpMethods.INSTANCES.login(userName, pwd)
                 userLive?.value = data.data
             }

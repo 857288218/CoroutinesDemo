@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.login("15620519359", "rjq015")?.observe(this, Observer {
+        viewModel.login("15620419359", "rjq015")?.observe(this, Observer {
             result_TV?.text = it?.toString()
         })
     }

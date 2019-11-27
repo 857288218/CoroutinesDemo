@@ -12,5 +12,5 @@ interface MovieService {
     @FormUrlEncoded
     @POST("/user/login")
     //可以使用最原始的方法返回Call<WanResponse<User>>
-    fun login(@Field("username") username: String, @Field("password") password: String): Deferred<WanResponse<User>>
+    fun loginAsync(@Field("username") username: String, @Field("password") password: String): Deferred<WanResponse<User>>
 }
