@@ -1,5 +1,7 @@
 package com.example.rjq.myapplication.http
 
+import com.example.rjq.myapplication.BaseApplication
+import com.example.rjq.myapplication.R
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
 import kotlinx.coroutines.Dispatchers
@@ -34,19 +36,23 @@ class HttpMethods private constructor() {
         }
     }
 
+    private fun handleException(e: Exception): String {
+        return when (e) {
+            is ConnectException -> BaseApplication.context.getString(R.string.network_connect_error)
+            is SocketTimeoutException -> BaseApplication.context.getString(R.string.network_connect_timeout)
+            is ResponseCodeException -> BaseApplication.context.getString(R.string.network_response_code_error) + e.responseCode
+            is NoRouteToHostException -> BaseApplication.context.getString(R.string.no_route_to_host)
+            else -> BaseApplication.context.getString(R.string.unknown_error)
+        }
+    }
+
     suspend fun login(userName: String, pwd: String): WanResponse<User?> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
         return withContext(Dispatchers.IO) {
             try {
                 movieService.loginAsync(userName, pwd)
             } catch (e: Exception) {
-                when (e) {
-                    is ConnectException -> WanResponse(-1, e.message, null)
-                    is SocketTimeoutException -> WanResponse(-1, e.message, null)
-                    is ResponseCodeException -> WanResponse(-1, e.message, null)
-                    is NoRouteToHostException -> WanResponse(-1, e.message, null)
-                }
-                WanResponse(-1, e.message, null)
+                WanResponse<User>(-1, handleException(e), null)
             }
         }
     }
