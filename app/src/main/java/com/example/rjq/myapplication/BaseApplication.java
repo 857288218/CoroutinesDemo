@@ -24,7 +24,7 @@ public class BaseApplication extends Application {
 
         //生产者
         ArrayList<? extends TextView> list1 = new ArrayList<Button>();
-        TextView textView = list1.get(0);
+//        TextView textView = list1.get(0);
 //        Button textView2 = list1.get(0); //报错
 //        list1.add(new TextView(this)); //报错
 //        list1.add(new Button(this));   //报错

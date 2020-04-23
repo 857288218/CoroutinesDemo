@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
 
         //生产者
         val list1: ArrayList<out TextView> = ArrayList<Button>()
-        val textView = list1[0]
+//        val textView = list1[0]
 //        list1.add(Button(this))   //报错 禁止使用add方法
 
         //消费者

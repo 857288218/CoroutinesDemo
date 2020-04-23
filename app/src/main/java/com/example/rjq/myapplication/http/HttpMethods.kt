@@ -48,12 +48,10 @@ class HttpMethods private constructor() {
 
     suspend fun login(userName: String, pwd: String): WanResponse<User?> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
-        return withContext(Dispatchers.IO) {
-            try {
-                movieService.loginAsync(userName, pwd)
-            } catch (e: Exception) {
-                WanResponse<User>(-1, handleException(e), null)
-            }
+        return try {
+            movieService.loginAsync(userName, pwd)
+        } catch (e: Exception) {
+            WanResponse<User>(-1, handleException(e), null)
         }
     }
 }
