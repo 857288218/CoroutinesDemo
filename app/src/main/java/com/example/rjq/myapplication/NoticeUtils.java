@@ -1,6 +1,6 @@
 package com.example.rjq.myapplication;
 
-import android.support.annotation.StringRes;
+import androidx.annotation.StringRes;
 import android.widget.Toast;
 
 public class NoticeUtils {
