@@ -12,11 +12,13 @@ import java.util.ArrayList;
 public class BaseApplication extends Application {
 
     public static Context context;
+    public static Application app;
 
     @Override
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
+        app = this;
         ArrayList<TextView> list = new ArrayList();
         list.add(new Button(this));
         list.add(new EditText(this));
