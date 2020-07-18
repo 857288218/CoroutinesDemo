@@ -3,7 +3,7 @@ package com.example.rjq.myapplication;
 import android.util.Log;
 
 //测试类的初始化：按顺序执行类变量的赋值和静态代码块。实例初始化不一定要在类初始化结束之后才开始初始化，以下instance例子
-//如果是常量(static final修饰的)则在类的准备阶段就设置为指定的值，顺序不确定
+//如果是常量(static final修饰的)则在类的准备阶段就设置为指定的值，顺序不确定:instance2例子，准备阶段给常量instance2赋指定值，str3就已经赋完指定值了，看log输出
 class TestLoader {
     private static int i = 1;
     public static TestLoader instance = new TestLoader();
