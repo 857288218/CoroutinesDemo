@@ -2,11 +2,14 @@ package com.example.rjq.myapplication
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity() {
 
@@ -17,9 +20,6 @@ class MainActivity : BaseActivity() {
         get() = "sdsd"
     private var e = "bbb"
         get() = "sss"
-        set(value) {
-            field = "fff"
-        }
     private var f = "lll"
     private var g = "ddd"
         set(value) {
@@ -42,9 +42,14 @@ class MainActivity : BaseActivity() {
         val k = e
         val l = f
         val ll = g
+        e = "mmmm"
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         //测试类的初始化：读取或设置一个类的静态字段（被final修饰，已在编译器把结果放入常量池的静态字段除外），如果类没有进行初始化，则先进行初始化
         TestLoader.instance2
+
+        lifecycleScope.launch {
+
+        }
     }
 
     override fun onResume() {
