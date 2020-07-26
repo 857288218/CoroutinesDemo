@@ -29,7 +29,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 //                if (data.errorMsg?.isNotEmpty() == true) {
 //                    NoticeUtils.showToast(data.errorMsg)
 //                }
-//            }  
+//            }
 
             val handler = CoroutineExceptionHandler {
                 context, exception -> println("Caught $exception")
