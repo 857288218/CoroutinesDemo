@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.rjq.myapplication.NoticeUtils
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.http.HttpMethods
@@ -21,15 +22,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun login(userName: String, pwd: String): LiveData<User>? {
         if (userLive == null || (userLive?.value == null)) {
             userLive = MutableLiveData()
-//            viewModelScope.launch {
-//                //开启一个协程
-//                //如果串行调用多个接口的话，使用协程可以避免回调地狱；以同步的方式实现异步的逻辑
-//                val data = HttpMethods.INSTANCES.login(userName, pwd)
+            viewModelScope.launch {
+                //开启一个协程
+                //如果串行调用多个接口的话，使用协程可以避免回调地狱；以同步的方式实现异步的逻辑
+                val currentTime = System.currentTimeMillis()
+                Log.d("renjunqingTime", Thread.currentThread().toString())
+                //开一个协程(launch/async)相当于向主线程(或指定线程)发消息等待执行，
+                //下面例子，先打印System.currentTimeMillis() - currentTime，主线程睡3秒，然后第一个launch执行:主线程睡3秒，login切到子线程中去执行，login后面的代码需要等到login执行完成后再执行
+                //相当于一同和login切到了子线程中，等login执行完后，再切回(handle.post)launch指定得线程
+                //当执行到第一个launch login时，login切线程去执行，第二个launch会在主线程中执行打印Thread.currentThread().toString()，然后login切线程执行，由于两个launch中得login都是在子线程
+                //中执行的，所以两个login后面打印的日志先后顺序是不确定得，取决于哪个login先执行完切回主线程即launch所在线程
+                launch {
+                    Log.d("renjunqingTime", Thread.currentThread().toString())
+                    Thread.sleep(3000)
+                    //切到子线程去执行
+                    val data = HttpMethods.INSTANCES.login(userName, pwd)
+                    //等待login在子线程执行完，再切回launch所在线程(handler.post切)
+                    Log.d("renjunqingTime", "我是第一个launch login后的代码")
+                }
+                launch {
+                    Log.d("renjunqingTime", Thread.currentThread().toString())
+                    HttpMethods.INSTANCES.login(userName, pwd)
+                    Log.d("renjunqingTime", "我是第二个launch login后的代码")
+                }
+                Log.d("renjunqingTime", "${System.currentTimeMillis() - currentTime}")
+                Thread.sleep(3000)
 //                userLive?.value = data.data
 //                if (data.errorMsg?.isNotEmpty() == true) {
 //                    NoticeUtils.showToast(data.errorMsg)
 //                }
-//            }
+            }
 
             val handler = CoroutineExceptionHandler {
                 context, exception -> println("Caught $exception")
