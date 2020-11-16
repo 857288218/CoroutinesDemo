@@ -14,7 +14,7 @@ public class SmartLiveData<T> extends MutableLiveData<T> {
     private ArrayMap<Observer<T>, CustomObserver<T>> sparseArray = new ArrayMap<>();
 
     public void observe(@NonNull LifecycleOwner owner, boolean isSticky, @NonNull Observer<T> observer) {
-        if (isSticky){
+        if (isSticky) {
             super.observe(owner, observer);
         } else {
             if (!sparseArray.containsKey(observer)) {
@@ -26,7 +26,7 @@ public class SmartLiveData<T> extends MutableLiveData<T> {
     }
 
     public Observer<T> observeForever(@NonNull Observer<T> observer, boolean isSticky) {
-        if (isSticky){
+        if (isSticky) {
             super.observeForever(observer);
             return observer;
         } else {
@@ -43,11 +43,21 @@ public class SmartLiveData<T> extends MutableLiveData<T> {
 
     @Override
     public void removeObserver(@NonNull Observer<? super T> observer) {
-        CustomObserver<T> removeObserver = sparseArray.remove(observer);
-        if (removeObserver != null) {
-            super.removeObserver(removeObserver);
-        } else {
+        if (observer instanceof CustomObserver) {
             super.removeObserver(observer);
+            for (int i = 0; i < sparseArray.size(); i++) {
+                if (observer == sparseArray.valueAt(i)) {
+                    sparseArray.remove(sparseArray.keyAt(i));
+                    break;
+                }
+            }
+        } else {
+            CustomObserver<T> removeObserver = sparseArray.remove(observer);
+            if (removeObserver != null) {
+                super.removeObserver(removeObserver);
+            } else {
+                super.removeObserver(observer);
+            }
         }
     }
 
