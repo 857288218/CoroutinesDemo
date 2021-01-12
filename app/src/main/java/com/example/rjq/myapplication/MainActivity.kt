@@ -2,10 +2,7 @@ package com.example.rjq.myapplication
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
