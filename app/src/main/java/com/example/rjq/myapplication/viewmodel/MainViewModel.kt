@@ -28,8 +28,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val currentTime = System.currentTimeMillis()
                 Log.d("renjunqingTime", Thread.currentThread().toString())
                 //开一个协程(launch/async)相当于向主线程(或指定线程)发消息等待执行，
-                //下面例子，先打印System.currentTimeMillis() - currentTime，主线程睡3秒，然后第一个launch执行:主线程睡3秒，login(挂起函数)切到子线程中去执行，login后面的代码需要等到login执行完成后再执行
-                //相当于一同和login切到了子线程中，等login执行完后，再切回(handle.post)launch指定得线程
+                //下面例子，先打印System.currentTimeMillis() - currentTime，主线程睡3秒(deffer1.await(),deffer2.await()执行的情况下最后才打印System.currentTimeMillis()-currentTime,主线程睡3秒)，
+                //然后第一个launch/async执行:主线程睡3秒，login(挂起函数)切到子线程中去执行，login后面的代码需要等到login执行完成后再执行；
+                //相当于一同和login切到了子线程中，等login执行完后，再切回(handle.post)launch/async指定的线程;如果login不是挂起函数,那么会立即打印"我是第一个launch login后的代码"
                 //当执行到第一个launch/async login时，login切线程去执行，第二个launch/async会在主线程中执行打印Thread.currentThread().toString()，然后login切线程执行，
                 //由于两个launch/async中的login都是在子线程执行的，所以两个login后面打印的日志先后顺序是不确定的，取决于哪个login先执行完切回主线程即launch/async所在线程
                 val deffer1 = async {
