@@ -2,10 +2,12 @@ package com.example.rjq.myapplication.viewmodel
 
 import android.app.Application
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.rjq.myapplication.BaseApplication
 import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
@@ -27,10 +29,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         userLive.value = result.data
                     } else {
                         //业务错误，弹toast
+                        Toast.makeText(BaseApplication.context, result.data?.errorMsg, Toast.LENGTH_SHORT).show()
                     }
                 }
                 is ApiResult.Failure -> {
                     //http status错误或网络请求中发生异常，弹toast
+                    Toast.makeText(BaseApplication.context, result.errorMsg, Toast.LENGTH_SHORT).show()
                 }
             }
         }
