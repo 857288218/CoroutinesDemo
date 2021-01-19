@@ -6,21 +6,39 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.rjq.myapplication.NoticeUtils
+import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
+import com.example.rjq.myapplication.entity.WanResponse
 import com.example.rjq.myapplication.http.HttpMethods
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
-    private var userLive: MutableLiveData<User>? = null
+    var userLive: MutableLiveData<WanResponse<User>> = MutableLiveData()
 
-    fun login(userName: String, pwd: String): LiveData<User>? {
-        if (userLive == null || (userLive?.value == null)) {
+    fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>>? {
+        viewModelScope.launch {
+            when (val result = HttpMethods.INSTANCES.login(userName, pwd)) {
+                is ApiResult.Success -> {
+                    if (result.data?.errorCode == 0) {
+                        userLive.value = result.data
+                    } else {
+                        //业务错误，弹toast
+                    }
+                }
+                is ApiResult.Failure -> {
+                    //http status错误或网络请求中发生异常，弹toast
+                }
+            }
+        }
+        return userLive
+    }
+
+    fun login(userName: String, pwd: String): LiveData<WanResponse<User>>? {
+        if (userLive == null || (userLive.value == null)) {
             userLive = MutableLiveData()
             viewModelScope.launch {
                 //开启一个协程
@@ -56,8 +74,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 //                }
             }
 
-            val handler = CoroutineExceptionHandler {
-                context, exception -> println("Caught $exception")
+            val handler = CoroutineExceptionHandler { context, exception ->
+                println("Caught $exception")
             }
             val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 //            scope.launch {

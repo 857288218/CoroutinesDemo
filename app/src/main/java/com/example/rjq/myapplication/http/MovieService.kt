@@ -1,5 +1,6 @@
 package com.example.rjq.myapplication.http
 
+import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
 import kotlinx.coroutines.Deferred
@@ -12,5 +13,5 @@ interface MovieService {
     @FormUrlEncoded
     @POST("/user/login")
     //可以使用最原始的方法返回Call<WanResponse<User>>
-    suspend fun loginAsync(@Field("username") username: String, @Field("password") password: String): WanResponse<User>
+    suspend fun loginAsync(@Field("username") username: String, @Field("password") password: String): ApiResult<WanResponse<User>>
 }

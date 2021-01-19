@@ -3,6 +3,8 @@ package com.example.rjq.myapplication
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.webkit.CookieManager
+import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -40,6 +42,7 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         val h = a
         val j = b
@@ -90,16 +93,13 @@ class MainActivity : BaseActivity() {
             //将async中Dispatchers.IO去掉，那么时间是3秒
             Log.d("rjqasync", "${System.currentTimeMillis() - currentTime}, c: $c")
         }
-
+        viewModel.userLive.observe(this, Observer {
+            findViewById<TextView>(R.id.result_TV).text = it?.toString()
+        })
         findViewById<View>(R.id.click_me_BN).setOnClickListener {
-            viewModel.login("15620419359", "rjq015")?.observe(this, Observer {
-                result_TV?.text = it?.toString()
-            })
+            viewModel.loginTest("15620419359", "rjq015")
+//            viewModel.login("15620419359", "rjq015")
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onDestroy() {
