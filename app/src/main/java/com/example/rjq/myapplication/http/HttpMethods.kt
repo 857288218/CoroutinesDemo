@@ -8,6 +8,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
+/**
+ * Repository层，在ViewModel中持有该对象调用该层接口请求数据
+ */
 class HttpMethods private constructor() {
 
     companion object {

@@ -74,8 +74,8 @@ public class SmartLiveData<T> extends MutableLiveData<T> {
     }
 
     class CustomObserver<T> implements Observer<T> {
-        private Observer<? super T> mObserver;
-        private int observerVersion = mVersion;
+        private final Observer<? super T> mObserver;
+        private final int observerVersion = mVersion;
 
         public CustomObserver(Observer<? super T> observer) {
             mObserver = observer;

@@ -28,7 +28,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     if (result.data?.errorCode == 0) {
                         userLive.value = result.data
                     } else {
-                        //业务错误，弹toast
+                        //业务错误，弹toast，也可以把业务错误封装到ApiResult.Failure中
                         Toast.makeText(BaseApplication.context, result.data?.errorMsg, Toast.LENGTH_SHORT).show()
                     }
                 }
