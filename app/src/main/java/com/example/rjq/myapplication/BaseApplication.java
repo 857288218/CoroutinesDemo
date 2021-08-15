@@ -2,6 +2,7 @@ package com.example.rjq.myapplication;
 
 import android.app.Application;
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,9 +25,10 @@ public class BaseApplication extends Application {
         list.add(new EditText(this));
         list.add(new TextView(this));
 
-        //生产者
+        //生产者,只能向外提供数据
         ArrayList<? extends TextView> list1 = new ArrayList<Button>();
 //        TextView textView = list1.get(0);
+//        View view = list1.get(0);
 //        Button textView2 = list1.get(0); //报错
 //        list1.add(new TextView(this)); //报错
 //        list1.add(new Button(this));   //报错
@@ -37,8 +39,9 @@ public class BaseApplication extends Application {
         list2.add(new Button(this));
         list2.add(new EditText(this));
         list2.add(new TextView(this));
-//        list2.add(new View(this));    //报错
         Object button = list2.get(0);           //只能得到Object类型的
 //        View view = list2.get(0);       //报错
+//        list2.add(new View(this));    //报错
+
     }
 }
