@@ -2,6 +2,7 @@ package com.example.rjq.myapplication
 
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.TextView
@@ -75,12 +76,22 @@ class MainActivity : BaseActivity() {
             findViewById<TextView>(R.id.result_TV).text = it?.toString()
         })
         findViewById<View>(R.id.click_me_BN).setOnClickListener {
-            viewModel.loginTest("15620419359", "rjq015")
-//            viewModel.login("15620419359", "rjq015")
+//            viewModel.loginTest("15620419359", "rjq015")
+            viewModel.login("15620419359", "rjq015")
+
+//            CoroutineScope(Dispatchers.Main).launch {
+//                Log.d("testGlobalScope", "1")
+//            }
+//            CoroutineScope(Dispatchers.Main.immediate).launch {
+//                Log.d("testGlobalScope", "2")
+//            }
+            Log.d("testGlobalScope", "0")
         }
 
 //        val user = User::class.java.newInstance()
 //        Log.d("rjqtest", user.toString())
+
+//        viewModel.login("rjq", "rjqqqq")
 
         /**
          * Flow
@@ -109,7 +120,7 @@ class MainActivity : BaseActivity() {
 
         //一个 Flow 创建出来之后，不消费则不生产，多次消费则多次生产;所谓冷数据流，就是只有消费时才会生产的数据流
         lifecycleScope.launch(Dispatchers.Main) {
-            flow {
+            val flow = flow {
                 // With the flow builder, the producer cannot emit values from a different CoroutineContext
                 // Therefore, don't call emit in a different CoroutineContext by creating new coroutines or by using withContext blocks of code
                 emit(1)
@@ -136,9 +147,12 @@ class MainActivity : BaseActivity() {
                         //Flow从不捕获或处理下游流中发生的异常，它们仅使用catch运算符捕获上游发生的异常
                         Log.d("flow_test", "Flow catch $this thread:${Thread.currentThread()}")
                     }
-                    .collect { i ->
-                        Log.d("flow_test", "Flow collect $i thread:${Thread.currentThread()}")
-                    }
+            flow.collect { i ->
+                Log.d("flow_test", "Flow collect $i thread:${Thread.currentThread()}")
+            }
+//            flow.collect { i ->
+//                Log.d("flow_test2", "Flow collect $i thread:${Thread.currentThread()}")
+//            }
 
         }
 
@@ -149,6 +163,11 @@ class MainActivity : BaseActivity() {
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "pre $i thread:${Thread.currentThread()}")
+            }
+            // 同一协程作用域下的除第一个以外的其他sharedFlow.collect不会执行以及监听sharedFlow，针对普通Flow不会这样，
+            // SharedFlow因为是热流，collect之后会一直监听SharedFlow，即挂起后不会恢复，第二个collect也就执行不到了
+            sharedFlow.collect { i ->
+                Log.d("SharedFlow_test2", "pre $i thread:${Thread.currentThread()}")
             }
         }
         lifecycleScope.launch {
@@ -168,6 +187,16 @@ class MainActivity : BaseActivity() {
          */
         val stateFlow = MutableStateFlow("say")
         lifecycleScope.launch {
+            launch {
+                Log.d("lifecyclerLaunch", "1")
+            }
+            launch {
+                Log.d("lifecyclerLaunch", "2")
+            }
+            launch {
+                Log.d("lifecyclerLaunch", "3")
+            }
+            Log.d("lifecyclerLaunch", "0")
             stateFlow.collect { i ->
                 Log.d("StateFlow_test", "pre $i thread:${Thread.currentThread()}")
             }
@@ -187,8 +216,9 @@ class MainActivity : BaseActivity() {
             }
         }
         lifecycleScope.launch {
-            stateFlow.value = "backHello"
+            stateFlow.value = "backHello1"
         }
+        stateFlow.value = "backHello2"
     }
 
     override fun onDestroy() {

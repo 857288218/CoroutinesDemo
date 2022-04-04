@@ -20,7 +20,7 @@ public class BaseApplication extends Application {
         super.onCreate();
         context = getApplicationContext();
         app = this;
-        ArrayList<TextView> list = new ArrayList();
+        ArrayList<TextView> list = new ArrayList<>();
         list.add(new Button(this));
         list.add(new EditText(this));
         list.add(new TextView(this));
