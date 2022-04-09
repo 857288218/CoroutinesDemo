@@ -55,7 +55,7 @@ class NoStickyLiveData<T> : MutableLiveData<T>() {
             super.removeObserver(observer)
             sparseArray.removeAt(sparseArray.indexOfKey(observer.mObserver))
         } else {
-            // 如果主动调用observer不是CustomObserver，但可能在observeNoSticky中被封装成CustomObserver
+            // 如果主动调用removeObserver，此时observer不是CustomObserver，但可能在observeNoSticky中被封装成CustomObserver
             val removeIndex = sparseArray.indexOfKey(observer)
             if (removeIndex >= 0) {
                 val removeObserver = sparseArray.valueAt(removeIndex)
