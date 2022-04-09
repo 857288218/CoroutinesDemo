@@ -5,7 +5,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 
-class NoStickyLiveData<T> : MutableLiveData<T>() {
+// 提供非粘性observeNoSticky,observeForeverNoSticky;
+class SmartLiveData<T> : MutableLiveData<T>() {
 
     private var mVersion = -1
     private val sparseArray = ArrayMap<Observer<T>, CustomObserver>()
