@@ -6,14 +6,12 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.TextView
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.whenCreated
+import androidx.lifecycle.*
 import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 
@@ -21,35 +19,12 @@ class MainActivity : BaseActivity() {
 
     private var loadingDialog: LoadingDialog? = null
     private lateinit var viewModel: MainViewModel
-    private val a = "ddd"
-    private val b
-        get() = "sdsd"
-    private var e = "bbb"
-        get() = "sss"
-    private var f = "lll"
-    private var g = "ddd"
-        set(value) {
-            field = value
-        }
-        get() = field
-
-    object T {
-        val c = "ccc"
-        val d
-            get() = "ddd"
-        var ff = "fff"
-    }
+    private lateinit var sharedFlow: MutableSharedFlow<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_main)
-        val h = a
-        val j = b
-        val k = e
-        val l = f
-        val ll = g
-        e = "mmmm"
+
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         //测试类的初始化：读取或设置一个类的静态字段（被final修饰，已在编译器把结果放入常量池的静态字段除外），如果类没有进行初始化，则先进行初始化
         TestLoader.instance2
@@ -158,32 +133,54 @@ class MainActivity : BaseActivity() {
 
         /**
          * SharedFlow
+         * 它和stateFlow都是热流
           */
-        val sharedFlow = MutableSharedFlow<String>()
+        sharedFlow = MutableSharedFlow<String>(replay = 1, onBufferOverflow = BufferOverflow.SUSPEND)
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "pre $i thread:${Thread.currentThread()}")
             }
-            // 同一协程作用域下的除第一个以外的其他sharedFlow.collect不会执行以及监听sharedFlow，针对普通Flow不会这样，
-            // SharedFlow因为是热流，collect之后会一直监听SharedFlow，即挂起后不会恢复，第二个collect也就执行不到了
+            // 同一协程作用域下的除第一个以外的其他sharedFlow/stateFlow.collect不会执行及监听sharedFlow/stateFlow，普通Flow不会这样，
+            // SharedFlow是热流，collect之后会一直监听SharedFlow，即挂起后不会恢复，第二个collect也就执行不到了
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test2", "pre $i thread:${Thread.currentThread()}")
             }
         }
         lifecycleScope.launch {
+            // 当缓存数据量超过阈值时即还未消费的数据>bufferCapacity
+            // if缓存策略为 BufferOverflow.SUSPEND,emit方法会挂起排队，直到有新的缓存空间,上面的collect能收集到发送的三个数据
+            // if缓存策略为 BufferOverflow.DROP_OLDEST/DROP_LATEST,会丢弃最老/最新的数据，上面的collect在replay=2(bufferCapacity=replay+extraBufferCapacity)时能收集到两个数据,即bufferCapacity个数据
             sharedFlow.emit("Hello")
             sharedFlow.emit("SharedFlow")
             sharedFlow.emit("SharedFlow2")
+            // 测试repeatOnLifecycle在onStop后能否收到数据，重新start后能否收到
+            Handler(Looper.getMainLooper()).postDelayed({
+                lifecycleScope.launch {
+                    sharedFlow.emit("SharedFlow3")
+                }
+            }, 8000)
         }
-        // 如果MutableSharedFlow不设置replay参数，在sharedFlow.emit之后去订阅那么接收不到订阅之前emit值
+        // 如果MutableSharedFlow不设置replay参数，在sharedFlow.emit之后订阅那么接收不到订阅之前emit值
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "back $i thread:${Thread.currentThread()}")
             }
         }
+        lifecycleScope.launch {
+            // 在ON_START时repeatOnLifecycle内部会启动协程调用block，在ON_STOP时取消该协程 然后在lifecycle重新回到ON_START时重新启动一个协程执行block，具体见源码
+            // 所以if sharedFlow的replay=0,从后台返回前台后不会收到在后台sharedFlow.emit的数据,replay=1每次从后台回到前台都会收到最新数据,因为每次都是重新执行sharedFlow.collect
+            // 仅当UI可见时才收集flow使用repeatOnLifecycle，其更为安全的收集Android UI数据流,避免手动在activity onDestroy/onStop取消协程(也就取消了flow.collect)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedFlow.collect { i ->
+                    Log.d("repeatOnLifecycle_test", "$i")
+                }
+            }
+            // 当协程恢复时即当运行到这的时候，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
+        }
 
         /**
-         * StateFlow:是SharedFlow 的一种特殊实现(replay = 1),类似liveDta，也具有粘性效果
+         * StateFlow:是SharedFlow 的一种特殊实现(replay = 1),类似liveDta
+         * 需要设置初始值，不会发送相同值
          */
         val stateFlow = MutableStateFlow("say")
         lifecycleScope.launch {
@@ -202,13 +199,16 @@ class MainActivity : BaseActivity() {
             }
         }
         lifecycleScope.launch {
+            // emit内部调用的value
             stateFlow.emit("Hello")
             stateFlow.emit("StateFlow")
             stateFlow.value = "HelloValue"
             stateFlow.value = "StateFlowValue"
+            // 以上发送的四条数据只会接收到StateFlowValue
             delay(500)
-//            Thread.sleep(5000)
+            // delayHello和delayHello2都会接收到
             stateFlow.value = "delayHello"
+            stateFlow.value = "delayHello2"
         }
         lifecycleScope.launch {
             stateFlow.collect { i ->
@@ -216,9 +216,15 @@ class MainActivity : BaseActivity() {
             }
         }
         lifecycleScope.launch {
-            stateFlow.value = "backHello1"
+            // 只会接收到backHello2
+            stateFlow.value = "backHello"
+            stateFlow.value = "backHello2"
         }
-        stateFlow.value = "backHello2"
+        // lastHello和lastHello2都会接收到
+        stateFlow.value = "lastHello"
+        stateFlow.value = "lastHello2"
+        // stateFlow不会收到重复数据，sharedFlow可以
+        stateFlow.value = "lastHello2"
     }
 
     override fun onDestroy() {
