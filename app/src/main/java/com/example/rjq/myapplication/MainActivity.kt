@@ -167,9 +167,9 @@ class MainActivity : BaseActivity() {
             }
         }
         lifecycleScope.launch {
-            // 在ON_START时repeatOnLifecycle内部会启动协程调用block，在ON_STOP时取消该协程 然后在lifecycle重新回到ON_START时重新启动一个协程执行block，具体见源码
+            // 在ON_START时repeatOnLifecycle内部会启动协程调用block，在ON_STOP时取消该协程(协程里面的collect操作也会取消) 然后在lifecycle重新回到ON_START时重新启动一个协程执行block，具体见源码
             // 所以if sharedFlow的replay=0,从后台返回前台后不会收到在后台sharedFlow.emit的数据,replay=1每次从后台回到前台都会收到最新数据,因为每次都是重新执行sharedFlow.collect
-            // 仅当UI可见时才收集flow使用repeatOnLifecycle，其更为安全的收集Android UI数据流,避免手动在activity onDestroy/onStop取消协程(也就取消了flow.collect)
+            // 仅当UI可见时才收集flow使用repeatOnLifecycle，其更为安全的收集Android UI数据流,避免了手动在onDestroy/onStop取消协程(也就取消了flow.collect)
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 sharedFlow.collect { i ->
                     Log.d("repeatOnLifecycle_test", "$i")
@@ -177,7 +177,7 @@ class MainActivity : BaseActivity() {
             }
             // 当协程恢复时即当运行到这的时候，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
         }
-        // launchWhenXXX废弃了，使用repeatOnLifecycle代替；其会在ON_STOP时挂起协程也就不会再执行sharedFlow.collect，当ON_START后再恢复协程继续collect，具体见源码
+        // launchWhenXXX废弃了，使用repeatOnLifecycle代替；其会在ON_STOP时pause也就不会再执行sharedFlow.collect(但并没取消协程 协程取消后collect操作也会取消)，当ON_START后再恢复协程继续collect，具体见源码
         lifecycleScope.launchWhenStarted {
             sharedFlow.collect { i ->
                 Log.d("launchWhenResumed", "$i")
