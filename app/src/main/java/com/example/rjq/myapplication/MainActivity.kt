@@ -135,7 +135,7 @@ class MainActivity : BaseActivity() {
          * SharedFlow
          * 它和stateFlow都是热流
           */
-        sharedFlow = MutableSharedFlow<String>(replay = 1, onBufferOverflow = BufferOverflow.SUSPEND)
+        sharedFlow = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_LATEST)
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "pre $i thread:${Thread.currentThread()}")
@@ -147,16 +147,16 @@ class MainActivity : BaseActivity() {
             }
         }
         lifecycleScope.launch {
-            // 当缓存数据量超过阈值时即还未消费的数据>bufferCapacity
-            // if缓存策略为 BufferOverflow.SUSPEND,emit方法会挂起排队，直到有新的缓存空间,上面的collect能收集到发送的三个数据
-            // if缓存策略为 BufferOverflow.DROP_OLDEST/DROP_LATEST,会丢弃最老/最新的数据，上面的collect在replay=2(bufferCapacity=replay+extraBufferCapacity)时能收集到两个数据,即bufferCapacity个数据
+            // 当缓存数据量bufferSize>=bufferCapacity时，if缓存策略为BufferOverflow.SUSPEND,emit的value会放在buffer的queued emitters位置，上面的collect能收集到下面连续发送的三个数据
+            // if缓存策略为BufferOverflow.DROP_OLDEST,会丢弃buffer中最老的数据 将新value加入buffer,上面的collect能收集到下面连续发的三个数据中最新的bufferCapacity=replay+extraBufferCapacity个
+            // if缓存策略为BufferOverflow.DROP_LATEST,会丢弃当前数据，上面的collect能收集到下面连续发的三个数据中最老的bufferCapacity个
             sharedFlow.emit("Hello")
             sharedFlow.emit("SharedFlow")
             sharedFlow.emit("SharedFlow2")
             // 测试repeatOnLifecycle在onStop后能否收到数据，重新start后能否收到
             Handler(Looper.getMainLooper()).postDelayed({
                 lifecycleScope.launch {
-                    sharedFlow.emit("SharedFlow3")
+//                    sharedFlow.emit("SharedFlow3")
                 }
             }, 8000)
         }
