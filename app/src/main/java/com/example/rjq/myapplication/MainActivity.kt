@@ -177,6 +177,12 @@ class MainActivity : BaseActivity() {
             }
             // 当协程恢复时即当运行到这的时候，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
         }
+        // launchWhenXXX废弃了，使用repeatOnLifecycle代替；其会在ON_STOP时挂起协程也就不会再执行sharedFlow.collect，当ON_START后再恢复协程继续collect，具体见源码
+        lifecycleScope.launchWhenStarted {
+            sharedFlow.collect { i ->
+                Log.d("launchWhenResumed", "$i")
+            }
+        }
 
         /**
          * StateFlow:是SharedFlow 的一种特殊实现(replay = 1),类似liveDta
