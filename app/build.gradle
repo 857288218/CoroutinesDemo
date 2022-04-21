@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "com.example.rjq.myapplication"
         minSdkVersion 26
-        targetSdkVersion 28
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -47,4 +47,5 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0"
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
 }
