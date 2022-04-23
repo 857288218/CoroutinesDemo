@@ -73,10 +73,10 @@ class MainActivity : BaseActivity() {
      * SharedFlow
      * 它和stateFlow都是热流
      */
-    // 挂起函数：suspend修饰的函数最终都要调用到suspendCancellableCoroutine函数(可指定其block参数运行的线程),该函数是将所在协程挂起即协程中挂起函数后面代码挂起等待命令执行,
-    // 该函数接收一个lambda表达式在该lambda中根据条件调用cont.resume恢复挂起的代码继续在所在协程中执行(协程指定的线程)，如果不调用cont.resume该协程中挂起的代码将永远得不到执行
-    // 例如withContext(Dispatcher.IO){...}该挂起函数内调用suspendCoroutineUninterceptedOrReturn函数在IO线程中执行withContext中传入的block即耗时操作 执行完后最终调用cont.resume执行协程中挂起的代码
-    // 所以挂起协程中代码并不是一直占用协程指定的线程而是挂起的代码暂不不执行了不占用该线程了，该线程就去做别的事情了，当调用cont.resume时会恢复该协程中挂起的代码继续执行
+    // 挂起函数：suspend修饰的函数最终都要调用到suspendCancellableCoroutine函数(可指定其block参数运行的线程),该函数将所在协程挂起即该协程中代码暂不执行了,该协程指定的线程就去处理其他任务了,
+    // 该函数接收一个lambda表达式可以在该lambda中根据条件调用cont.resume恢复挂起的协程继续在该协程指定的线程执行代码，如果不调用cont.resume该挂起的协程就永远不会继续执行
+    // 例如withContext(Dispatcher.IO){...}该挂起函数内调用suspendCoroutineUninterceptedOrReturn函数在IO线程中执行withContext中传入的block即耗时操作 执行完后最终调用cont.resume恢复挂起协程继续执行代码
+    // 所以挂起协程并不是一直占用协程指定的线程而是挂起协程内的代码暂不执行了不占用该线程了,该线程就去做别的事情了,当调用cont.resume时相当于向挂起的协程所指定的线程postRunnable执行挂起的代码
     private fun testSharedFlow() {
         sharedFlow = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         lifecycleScope.launch {
@@ -84,8 +84,8 @@ class MainActivity : BaseActivity() {
                 Log.d("SharedFlow_test", "pre $i thread:${Thread.currentThread()}")
             }
             // 同一协程作用域下sharedFlow/stateFlow.collect后的代码永远不会执行到;
-            // sharedFlow.collect在调用其协程的指定线程执行了两个while(true)接收emit的值,当没值时会在while(true)中调用awaitValue 其内调用suspendCancellableCoroutine将while循环和sharedFlow.collect所在协程后面的代码挂起，
-            // 当emit时会调用cont?.resume将挂起的代码继续执行即while(true)循环又开始循环执行，导致sharedFlow.collect所在协程后面挂起的代码一直得不到执行
+            // sharedFlow.collect在调用其协程的指定线程执行了两个while(true)接收emit的值,当没值时会在while(true)中调用awaitValue 其内调用suspendCancellableCoroutine将协程挂起即该协程内的代码先不执行了该协程指定的线程就去处理别的任务了，
+            // 当emit时会调用cont?.resume将挂起的协程恢复继续执行协程内代码即while(true)循环又开始循环执行，导致该协程内sharedFlow.collect后面的代码一直得不到执行
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test2", "pre $i thread:${Thread.currentThread()}")
             }
@@ -124,8 +124,8 @@ class MainActivity : BaseActivity() {
                 }
             }
             // 当运行到这，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
-            // repeatOnLifecycle内调用suspendCancellableCoroutine将协程中repeatOnLifecycle后面代码挂起,suspendCancellableCoroutine在主线程执行其block向lifecycle添加LifecycleEventObserver，
-            // 在event == Lifecycle.Event.ON_DESTROY时调用cont.resume将挂起的代码恢复在所在协程执行
+            // repeatOnLifecycle内调用suspendCancellableCoroutine将协程挂起,suspendCancellableCoroutine在主线程执行其block向lifecycle添加LifecycleEventObserver，
+            // 在event == Lifecycle.Event.ON_DESTROY时调用cont.resume将挂起的协程恢复继续执行协程内代码
             Log.d("repeatOnLifecycle", "thread:${Thread.currentThread()} repeatOnLifecycle end")
         }
     }
