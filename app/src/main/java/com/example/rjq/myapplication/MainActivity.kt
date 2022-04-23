@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity() {
-
     private var loadingDialog: LoadingDialog? = null
     private lateinit var viewModel: MainViewModel
     private lateinit var sharedFlow: MutableSharedFlow<String>
@@ -24,10 +23,7 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-        //测试类的初始化：读取或设置一个类的静态字段（被final修饰，已在编译器把结果放入常量池的静态字段除外），如果类没有进行初始化，则先进行初始化
-        TestLoader.instance2
 
         lifecycleScope.launch {
             val currentTime = System.currentTimeMillis()
@@ -65,33 +61,7 @@ class MainActivity : BaseActivity() {
 
 //        val user = User::class.java.newInstance()
 //        Log.d("rjqtest", user.toString())
-
 //        viewModel.login("rjq", "rjqqqq")
-
-        /**
-         * Flow
-         */
-        val sequence = sequenceOf(1, 2, 3, 4)
-        val result: Sequence<Int> = sequence.map { i ->
-            Log.d("sequence_test", "Sequence Map $i")
-            i * 2
-        }.filter { i ->
-            Log.d("sequence_test", "Sequence Filter $i")
-            i % 3 == 0
-        }
-        Log.d("sequence_test", result.count().toString())
-        Log.d("sequence_test", result.first().toString())
-
-        val list = listOf(1, 2, 3, 4)
-        val resultList: List<Int> = list.map { i ->
-            Log.d("sequence_test", "List Map $i")
-            i * 2
-        }.filter { i ->
-            Log.d("sequence_test", "List Filter $i")
-            i % 3 == 0
-        }
-//        Log.d("sequence_test", resultList.first().toString())
-//        Log.d("sequence_test", resultList.first().toString())
 
         testFlow()
         testSharedFlow()
@@ -103,14 +73,19 @@ class MainActivity : BaseActivity() {
      * SharedFlow
      * 它和stateFlow都是热流
      */
+    // 挂起函数：suspend修饰的函数最终都要调用到suspendCancellableCoroutine函数(可指定其block参数运行的线程),该函数是将所在协程挂起即协程中挂起函数后面代码挂起等待命令执行,
+    // 该函数接收一个lambda表达式在该lambda中根据条件调用cont.resume恢复挂起的代码继续在所在协程中执行(协程指定的线程)，如果不调用cont.resume该协程中挂起的代码将永远得不到执行
+    // 例如withContext(Dispatcher.IO){...}该挂起函数内调用suspendCoroutineUninterceptedOrReturn函数在IO线程中执行withContext中传入的block即耗时操作 执行完后最终调用cont.resume执行协程中挂起的代码
+    // 所以挂起协程中代码并不是一直占用协程指定的线程而是挂起的代码暂不不执行了不占用该线程了，该线程就去做别的事情了，当调用cont.resume时会恢复该协程中挂起的代码继续执行
     private fun testSharedFlow() {
         sharedFlow = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "pre $i thread:${Thread.currentThread()}")
             }
-            // 同一协程作用域下的除第一个以外的其他sharedFlow/stateFlow.collect不会执行及监听sharedFlow/stateFlow，普通Flow不会这样，
-            // SharedFlow是热流，collect之后会一直监听SharedFlow，即挂起后不会恢复，第二个collect也就执行不到了
+            // 同一协程作用域下sharedFlow/stateFlow.collect后的代码永远不会执行到;
+            // sharedFlow.collect在调用其协程的指定线程执行了两个while(true)接收emit的值,当没值时会在while(true)中调用awaitValue 其内调用suspendCancellableCoroutine将while循环和sharedFlow.collect所在协程后面的代码挂起，
+            // 当emit时会调用cont?.resume将挂起的代码继续执行即while(true)循环又开始循环执行，导致sharedFlow.collect所在协程后面挂起的代码一直得不到执行
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test2", "pre $i thread:${Thread.currentThread()}")
             }
@@ -128,30 +103,30 @@ class MainActivity : BaseActivity() {
                 sharedFlow.emit("SharedFlow5")
                 sharedFlow.emit("SharedFlow6")
             }
+            delay(5000)
             sharedFlow.emit("SharedFlow3")
         }
-        // MutableSharedFlow不设置replay，接收不到collect之前sharedFlow#emit的值(缓存值)，如果设置了replay那么会收到replay个缓存值(bufferCapacity=replay+extraBufferCapacity)
+        // MutableSharedFlow不设置replay,接收不到collect之前emit的值(缓存值)，如果设置了replay那会收到replay个缓存值
         lifecycleScope.launch {
             sharedFlow.collect { i ->
                 Log.d("SharedFlow_test", "back $i thread:${Thread.currentThread()}")
             }
         }
         lifecycleScope.launch {
-            // 在ON_START时repeatOnLifecycle内部会启动协程调用block，在ON_STOP时取消该协程(协程里面的collect操作也会取消)后面重新回到ON_START时重新启动一个协程执行block，具体见源码
+            // 在ON_START时repeatOnLifecycle内部会启动协程调用block，在ON_STOP时取消该协程(协程里面的collect也会取消)当重新回到ON_START时重新启动一个协程执行block，具体见源码
             // 所以if sharedFlow的replay=0,从后台返回前台后不会收到缓存数据,replay=1每次从后台回到前台都会收到缓存数据,因为每次回到前台都是重新执行sharedFlow.collect
             // 仅当UI可见时才收集flow使用repeatOnLifecycle，其更为安全的收集Android UI数据流,避免了手动在onDestroy/onStop取消协程(也就取消了flow.collect)
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 该block运行在调用repeatOnLifecycle的协程所指定的线程中,如果协程Dispatcher.IO那么该block就在IO线程执行；block在this@coroutineScope.launch中调用,this@coroutineScope为调用repeatOnLifecycle的协程
+                Log.d("repeatOnLifecycle", "thread:${Thread.currentThread()}")
                 sharedFlow.collect { i ->
-                    Log.d("repeatOnLifecycle", i)
+                    Log.d("repeatOnLifecycle", "$i thread:${Thread.currentThread()}")
                 }
             }
-            // 当协程恢复时即当运行到这的时候，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
-        }
-        // launchWhenXXX废弃了，使用repeatOnLifecycle代替；其会在ON_STOP时pause也就不会再执行sharedFlow.collect(但并没取消协程 协程取消后collect操作也会取消)，当ON_START后再恢复协程继续collect，具体见源码
-        lifecycleScope.launchWhenStarted {
-            sharedFlow.collect { i ->
-                Log.d("launchWhenResumed", i)
-            }
+            // 当运行到这，说明lifecycle已经是ON_DESTROY,具体见repeatOnLifecycle源码
+            // repeatOnLifecycle内调用suspendCancellableCoroutine将协程中repeatOnLifecycle后面代码挂起,suspendCancellableCoroutine在主线程执行其block向lifecycle添加LifecycleEventObserver，
+            // 在event == Lifecycle.Event.ON_DESTROY时调用cont.resume将挂起的代码恢复在所在协程执行
+            Log.d("repeatOnLifecycle", "thread:${Thread.currentThread()} repeatOnLifecycle end")
         }
     }
 
@@ -206,16 +181,42 @@ class MainActivity : BaseActivity() {
     }
 
     private fun testFlow() {
-        //一个 Flow 创建出来之后，不消费则不生产，多次消费则多次生产;所谓冷数据流，就是只有消费时才会生产的数据流
+        /**
+         * Flow
+         */
+        val sequence = sequenceOf(1, 2, 3, 4)
+        val result: Sequence<Int> = sequence.map { i ->
+            Log.d("sequence_test", "Sequence Map $i")
+            i * 2
+        }.filter { i ->
+            Log.d("sequence_test", "Sequence Filter $i")
+            i % 3 == 0
+        }
+        Log.d("sequence_test", result.count().toString())
+        Log.d("sequence_test", result.first().toString())
+
+        val list = listOf(1, 2, 3, 4)
+        val resultList: List<Int> = list.map { i ->
+            Log.d("sequence_test", "List Map $i")
+            i * 2
+        }.filter { i ->
+            Log.d("sequence_test", "List Filter $i")
+            i % 3 == 0
+        }
+//        Log.d("sequence_test", resultList.first().toString())
+//        Log.d("sequence_test", resultList.first().toString())
+
         lifecycleScope.launch(Dispatchers.Main) {
+            //一个Flow创建出来后，不消费则不生产，多次消费则多次生产;所谓冷数据流，就是只有消费时才会生产的数据流,具体见源码；
+            // 调用flow.collect会使用collect中传入的FlowCollector参数调用flow传入的block即flow{}中的代码 在flow{}中调用emit其实就是调用flow.collect{}中代码，见最后注释的flow.collect
             val flow = flow {
-                // With the flow builder, the producer cannot emit values from a different CoroutineContext
-                // Therefore, don't call emit in a different CoroutineContext by creating new coroutines or by using withContext blocks of code
                 emit(1)
                 emit(2)
 //                throw IllegalStateException()
                 emit(3)
                 emit(4)
+                emit(5)
+                emit(6)
             }.map { i ->
                 delay(1000)
                 Log.d("flow_test", "Flow Map $i thread:${Thread.currentThread()}")
@@ -238,36 +239,45 @@ class MainActivity : BaseActivity() {
             flow.collect { i ->
                 Log.d("flow_test", "Flow collect $i thread:${Thread.currentThread()}")
             }
-//            flow.collect { i ->
-//                Log.d("flow_test2", "Flow collect $i thread:${Thread.currentThread()}")
-//            }
+            // 同上面写法
+//            flow.collect(object : FlowCollector<Int> {
+//                override suspend fun emit(value: Int) {
+//                    Log.d("flow_test2", "Flow collect $i thread:${Thread.currentThread()}")
+//                }
+//            })
         }
     }
 
+    // DataStore 保证原子性，一致性，隔离性，持久性;线程安全，进程不安全
     private fun testDataStore() {
         lifecycleScope.launch {
             // 写入数据
             dataStore.edit {
+                // 这里执行的线程是主线程，但数据写入逻辑是在子线程，具体见源码
+                // edit调用DataStore(SingleProcessDataStore)的updateData,将edit的参数transform和coroutineContext(主线程的)封装成Message.Update,
+                // 执行actor.offer(updateMsg)里使用scope.launch将数据写入又scope = CoroutineScope(Dispatchers.IO + SupervisorJob())所以数据写入在IO线程，然后执行SingleProcessDataStore#handleUpdate使用coroutineContext切到主线程执行transform即执行这里
+                Log.d("testDataStore", "edit ${Thread.currentThread()}")
                 it[DataStoreConstants.KEY_USER_AGE] = 27
                 it[DataStoreConstants.KEY_USER_NAME] = "ren jun qing"
             }
 
-            // 读取全部数据,当数据改变时会收到最新数据
+            // 读取数据,第一次调用会收到通知,当数据改变时会收到通知;dataStore.data.collect后面的代码不会执行到，同SharedFlow/StateFlow.collect{}一样
             dataStore.data.collect {
+                Log.d("testDataStore", "collect ${Thread.currentThread()}")
                 val userAge = it[DataStoreConstants.KEY_USER_AGE]
                 val userName = it[DataStoreConstants.KEY_USER_NAME]
             }
+            // 该代码不会执行到
+            dataStore.edit {
+                it[DataStoreConstants.KEY_USER_AGE] = 25
+                it[DataStoreConstants.KEY_USER_NAME] = "ren jun qing"
+            }
         }
 
-        // 使用LiveData
+        // 使用LiveData读取数据
         dataStore.data.asLiveData().observe(this@MainActivity, Observer {
-
+            val userAge = it[DataStoreConstants.KEY_USER_AGE]
+            val userName = it[DataStoreConstants.KEY_USER_NAME]
         })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (loadingDialog != null && loadingDialog!!.isShowing)
-            loadingDialog!!.dismiss()
     }
 }
