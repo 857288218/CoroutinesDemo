@@ -52,10 +52,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 //CoroutineScope().launch/async需要等其后面的代码执行完再执行该协程里的代码相当于向线程postMessage,可以使用Dispatchers.Main.immediate做到立即执行协程里的代码,viewModelScope/lifecycleScope就使用的Dispatchers.Main.immediate
 
                 //下面例子先打印System.currentTimeMillis() - currentTime,主线程睡3秒(deffer1.await(),deffer2.await()执行的情况下最后才打印System.currentTimeMillis()-currentTime,主线程睡3秒)，
-                //然后第一个launch/async执行:主线程睡3秒,login(挂起函数)切到子线程中执行,该协程中login后面的代码需要等login执行完成后再执行；
-                //相当于同login切到子线程中,等login执行完,再切回(handle.post)launch/async指定的线程继续执行;如果login不是挂起函数,那么会立即打印"我是第一个login后的代码"
-                //当执行到第一个launch/async login时,login切线程去执行,第二个launch/async会在主线程中执行打印Thread.currentThread().toString(),然后login切线程执行，
-                //由于两个launch/async中的login都是在子线程执行的，所以两个login后面打印的日志先后顺序不确定,取决于哪个login先执行完切回主线程即launch/async所在线程
+                //然后第一个launch/async执行:主线程睡3秒,login(挂起函数)切到子线程中执行,该协程会挂起需要等login执行完成后再执行，具体看MainActivity#testSharedFlow注释；如果login不是挂起函数,那么会立即打印"我是第一个login后的代码"
+                //当执行到第一个launch/async login时,login切线程去执行网络请求并把该协程挂起等待执行,第二个launch/async会在主线程中执行打印Thread.currentThread().toString(),然后login切线程执行，
+                //由于两个launch/async中的login都在子线程执行，所以两个login后面打印的日志先后顺序不确定,取决于哪个login先执行完后其所在协程恢复执行
                 val deffer1 = async {
                     Log.d("renjunqingTime", Thread.currentThread().toString() + "1")
                     // 注意：Thread.sleep和delay不同，Thread是阻塞当前线程，delay是挂起当前协程(切线程去阻塞这个协程作用域中delay后面的代码，不阻塞当前线程,当时间到了又切回当前线程继续执行)

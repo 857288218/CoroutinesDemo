@@ -8,7 +8,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 class ApiResultCallAdapterFactory : CallAdapter.Factory() {
-    override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
+    override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *> {
         check(getRawType(returnType) == Call::class.java) { "$returnType must be retrofit2.Call." }
         check(returnType is ParameterizedType) { "$returnType must be parameterized. Raw types are not supported" }
 
@@ -59,7 +59,7 @@ class ApiResultCall<T>(private val delegate: Call<T>) : Call<ApiResult<T>> {
              * 在网络请求中发生了异常，会回调该方法
              */
             override fun onFailure(call: Call<T>, t: Throwable) {
-                val failureApiResult = ApiResult.Failure(-2, "当前网络不给力,请确认网络已连接")
+                val failureApiResult = ApiResult.Failure(-2, "当前网络不给力,请确认网络已连接:${t.message}")
                 callback.onResponse(this@ApiResultCall, Response.success(failureApiResult))
             }
         })
