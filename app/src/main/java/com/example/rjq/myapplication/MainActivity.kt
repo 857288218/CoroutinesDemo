@@ -73,9 +73,9 @@ class MainActivity : BaseActivity() {
      * SharedFlow
      * 它和stateFlow都是热流
      */
-    // 挂起函数：suspend修饰的函数最终都要调用到suspendCancellableCoroutine函数(可指定其block参数运行的线程),该函数将所在协程挂起即该协程中代码暂不执行了,该协程指定的线程就去处理其他任务了,
-    // 执行该函数的block参数 在block中可根据条件调用cont.resume恢复挂起协程继续在该协程指定的线程执行代码，如果不调用cont.resume挂起的协程就永远不会继续执行
-    // 例如withContext(Dispatcher.IO){...}该挂起函数内调用suspendCoroutineUninterceptedOrReturn函数在IO线程中执行withContext中传入的block即耗时操作 执行完后最终调用cont.resume恢复挂起协程继续执行代码
+    // 挂起函数：suspend修饰的函数最终都要调用到suspendCoroutineUninterceptedOrReturn函数,该函数接收一个block参数,该函数作用是将所在协程挂起即该协程中代码暂不执行了,该协程指定的线程就去处理其他任务了,
+    // 并执行该函数的block参数 在block中可根据条件调用cont.resume恢复挂起协程继续在该协程指定的线程执行代码，如果不调用cont.resume挂起的协程就永远不会继续执行
+    // 例如withContext(Dispatcher.IO){...}该挂起函数将所在协程挂起并在IO线程中执行block 执行完后调用了cont.resume恢复挂起协程继续执行代码
     // 所以挂起协程并不是一直占用协程指定的线程而是挂起协程内的代码暂不执行了不占用该线程了,该线程就去做别的事情了,当调用cont.resume时相当于向挂起的协程所指定的线程postRunnable执行挂起的代码
     private fun testSharedFlow() {
         sharedFlow = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
