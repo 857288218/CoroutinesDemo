@@ -47,9 +47,10 @@ class MainActivity : BaseActivity() {
             findViewById<TextView>(R.id.result_TV).text = it?.toString()
         })
         findViewById<View>(R.id.click_me_BN).setOnClickListener {
-//            viewModel.loginTest("15620419359", "rjq015")
-            viewModel.login("15620419359", "rjq015")
-
+           viewModel.loginTest("15620419359", "rjq015")
+//             viewModel.login("15620419359", "rjq015")
+//             viewModel.loginLive("15620419359", "rjq015")
+//             viewModel.loginAutoRemoveLive("15620419359", "rjq015")
 //            CoroutineScope(Dispatchers.Main).launch {
 //                Log.d("testGlobalScope", "1")
 //            }

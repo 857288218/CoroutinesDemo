@@ -3,39 +3,33 @@ package com.example.rjq.myapplication.viewmodel
 import android.app.Application
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.rjq.myapplication.BaseApplication
-import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
 import com.example.rjq.myapplication.http.HttpMethods
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
-class MainViewModel(app: Application) : AndroidViewModel(app) {
+class MainViewModel(app: Application) : BaseViewModel(app) {
 
     var userLive: MutableLiveData<WanResponse<User>> = MutableLiveData()
 
     fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>>? {
         viewModelScope.launch {
-            when (val result = HttpMethods.INSTANCES.login(userName, pwd)) {
-                is ApiResult.Success -> {
-                    if (result.data?.errorCode == 0) {
-                        userLive.value = result.data
-                    } else {
-                        //业务错误，弹toast，也可以把业务错误封装到ApiResult.Failure中
-                        Toast.makeText(BaseApplication.context, result.data?.errorMsg, Toast.LENGTH_SHORT).show()
-                    }
-                }
-                is ApiResult.Failure -> {
-                    //http status错误或网络请求中发生异常，弹toast
-                    Toast.makeText(BaseApplication.context, result.errorMsg, Toast.LENGTH_SHORT).show()
-                }
+            val wanResponse = HttpMethods.INSTANCES.login(userName, pwd)
+            if (wanResponse.errorCode == 0) {
+                userLive.value = wanResponse
+            } else {
+                //业务错误，弹toast，也可以把业务错误封装到ApiResult.Failure中
+                Toast.makeText(BaseApplication.context, wanResponse.errorMsg, Toast.LENGTH_SHORT)
+                    .show()
             }
         }
         return userLive
@@ -131,4 +125,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return userLive
     }
 
+    fun loginAutoRemoveLive(userName: String, pwd: String) {
+        HttpMethods.INSTANCES.loginLive(userName, pwd).setTag(this).observeForever {
+            Log.d("testlive", it.toString())
+        }
+    }
+
+    fun loginLive(userName: String, pwd: String) {
+        HttpMethods.INSTANCES.loginLive2(userName, pwd).observeForever {
+            Log.d("testlive", it.toString())
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.rjq.myapplication.http
 
+import androidx.lifecycle.LiveData
 import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
@@ -8,9 +9,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/**
- * Repository层，在ViewModel中持有该对象调用该层接口请求数据
- */
 class HttpMethods private constructor() {
 
     companion object {
@@ -24,18 +22,29 @@ class HttpMethods private constructor() {
             builder.connectTimeout(DEFAULT_TIMEOUT.toLong(), TimeUnit.SECONDS)
 
             movieService = Retrofit.Builder()
-                    .client(builder.build())
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .addCallAdapterFactory(ApiResultCallAdapterFactory())
-                    .baseUrl(BASE_URL)
-                    .build()
-                    .create(MovieService::class.java)
+                .client(builder.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(ApiResultCallAdapterFactory())
+                .addCallAdapterFactory(LiveDataCallAdapterFactory())
+                .baseUrl(BASE_URL)
+                .build()
+                .create(MovieService::class.java)
             HttpMethods()
         }
     }
 
-    suspend fun login(userName: String, pwd: String): ApiResult<WanResponse<User>> {
+    suspend fun login(userName: String, pwd: String): WanResponse<User> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
         return movieService.loginAsync(userName, pwd)
+    }
+
+    fun loginLive(userName: String, pwd: String): AutoRemoveObserverLiveData<WanResponse<User>> {
+        //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
+        return movieService.login(userName, pwd)
+    }
+
+    fun loginLive2(userName: String, pwd: String): LiveData<WanResponse<User>> {
+        //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
+        return movieService.login(userName, pwd)
     }
 }
