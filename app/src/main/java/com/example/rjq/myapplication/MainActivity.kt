@@ -51,6 +51,7 @@ class MainActivity : BaseActivity() {
 //             viewModel.login("15620419359", "rjq015")
 //             viewModel.loginLive("15620419359", "rjq015")
 //             viewModel.loginAutoRemoveLive("15620419359", "rjq015")
+
 //            CoroutineScope(Dispatchers.Main).launch {
 //                Log.d("testGlobalScope", "1")
 //            }

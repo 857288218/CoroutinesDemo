@@ -1,7 +1,6 @@
 package com.example.rjq.myapplication.http
 
 import androidx.lifecycle.LiveData
-import com.example.rjq.myapplication.entity.ApiResult
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
 import okhttp3.OkHttpClient

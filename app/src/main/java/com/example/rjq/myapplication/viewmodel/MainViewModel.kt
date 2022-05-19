@@ -19,22 +19,6 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(app: Application) : BaseViewModel(app) {
 
-    var userLive: MutableLiveData<WanResponse<User>> = MutableLiveData()
-
-    fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>>? {
-        viewModelScope.launch {
-            val wanResponse = HttpMethods.INSTANCES.login(userName, pwd)
-            if (wanResponse.errorCode == 0) {
-                userLive.value = wanResponse
-            } else {
-                //业务错误，弹toast，也可以把业务错误封装到ApiResult.Failure中
-                Toast.makeText(BaseApplication.context, wanResponse.errorMsg, Toast.LENGTH_SHORT)
-                    .show()
-            }
-        }
-        return userLive
-    }
-
     fun login(userName: String, pwd: String): LiveData<WanResponse<User>>? {
         if (userLive == null || (userLive.value == null)) {
             userLive = MutableLiveData()
@@ -125,15 +109,30 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
         return userLive
     }
 
+    var userLive: MutableLiveData<WanResponse<User>> = MutableLiveData()
+
+    fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>> {
+        viewModelScope.launch {
+            val wanResponse = HttpMethods.INSTANCES.login(userName, pwd)
+            if (wanResponse.errorCode == 0) {
+                userLive.value = wanResponse
+            } else {
+                //业务错误和请求错误，弹toast
+                Toast.makeText(BaseApplication.context, wanResponse.errorMsg, Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+        return userLive
+    }
+
     fun loginAutoRemoveLive(userName: String, pwd: String) {
         HttpMethods.INSTANCES.loginLive(userName, pwd).setTag(this).observeForever {
+            userLive.value = it
             Log.d("testlive", it.toString())
         }
     }
 
-    fun loginLive(userName: String, pwd: String) {
-        HttpMethods.INSTANCES.loginLive2(userName, pwd).observeForever {
-            Log.d("testlive", it.toString())
-        }
+    fun loginLive(userName: String, pwd: String): LiveData<WanResponse<User>> {
+        return HttpMethods.INSTANCES.loginLive2(userName, pwd)
     }
 }
