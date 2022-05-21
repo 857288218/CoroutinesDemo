@@ -44,6 +44,6 @@ class HttpMethods private constructor() {
 
     fun loginLive2(userName: String, pwd: String): LiveData<WanResponse<User>> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
-        return movieService.login(userName, pwd)
+        return movieService.login2(userName, pwd)
     }
 }
