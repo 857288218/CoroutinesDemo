@@ -22,7 +22,7 @@ interface MovieService {
     fun login(
         @Field("username") username: String,
         @Field("password") password: String
-    ): AutoRemoveObserverLiveData<WanResponse<User>>
+    ): AutoRemoveForeverObserverLiveData<WanResponse<User>>
 
     @FormUrlEncoded
     @POST("/user/login")

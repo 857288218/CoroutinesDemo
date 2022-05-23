@@ -14,7 +14,7 @@ class LiveDataCallAdapterFactory : Factory() {
         annotations: Array<Annotation>,
         retrofit: Retrofit
     ): CallAdapter<*, *>? {
-        if (getRawType(returnType) != LiveData::class.java && getRawType(returnType) != AutoRemoveObserverLiveData::class.java) {
+        if (getRawType(returnType) != LiveData::class.java && getRawType(returnType) != AutoRemoveForeverObserverLiveData::class.java) {
             return null
         }
 

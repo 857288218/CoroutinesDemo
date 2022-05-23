@@ -12,12 +12,12 @@ import java.lang.reflect.Type
  * A Retrofit adapter that converts the Call into a LiveData of ApiResponse.
  */
 class LiveDataJaResponseCallAdapter<R>(private val responseType: Type) :
-    CallAdapter<R, AutoRemoveObserverLiveData<R>> {
+    CallAdapter<R, AutoRemoveForeverObserverLiveData<R>> {
 
     override fun responseType() = responseType
 
-    override fun adapt(call: Call<R>): AutoRemoveObserverLiveData<R> {
-        return object : AutoRemoveObserverLiveData<R>() {
+    override fun adapt(call: Call<R>): AutoRemoveForeverObserverLiveData<R> {
+        return object : AutoRemoveForeverObserverLiveData<R>() {
             override fun onActive() {
                 super.onActive()
                 if (started.compareAndSet(false, true)) {
@@ -43,8 +43,8 @@ class LiveDataJaResponseCallAdapter<R>(private val responseType: Type) :
                 }
             }
 
-            override fun onInactive() {
-                super.onInactive()
+            override fun onTagDestroy() {
+                super.onTagDestroy()
                 call.cancel()
             }
         }

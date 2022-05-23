@@ -32,12 +32,13 @@ class HttpMethods private constructor() {
         }
     }
 
+    // 以下网络请求还有数据库请求应该放到XXXRepository中，ViewModel持有XXXRepository，看JiduWork feture-guide模块
     suspend fun login(userName: String, pwd: String): WanResponse<User> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
         return movieService.loginAsync(userName, pwd)
     }
 
-    fun loginLive(userName: String, pwd: String): AutoRemoveObserverLiveData<WanResponse<User>> {
+    fun loginLive(userName: String, pwd: String): AutoRemoveForeverObserverLiveData<WanResponse<User>> {
         //如果movieService.login使用最原始的方法返回Call<WanResponse<User>>,那么就需要调用call.enqueue(有两个回调)解析response,然后login返回LiveData<WanResponse<User>>
         return movieService.login(userName, pwd)
     }

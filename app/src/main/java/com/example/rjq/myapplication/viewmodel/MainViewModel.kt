@@ -111,6 +111,7 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
 
     var userLive: MutableLiveData<WanResponse<User>> = MutableLiveData()
 
+    // loginAutoRemoveLive、loginLive、loginLive2中推荐使用loginTest，
     fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>> {
         viewModelScope.launch {
             val wanResponse = HttpMethods.INSTANCES.login(userName, pwd)
@@ -134,5 +135,12 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
 
     fun loginLive(userName: String, pwd: String): LiveData<WanResponse<User>> {
         return HttpMethods.INSTANCES.loginLive2(userName, pwd)
+    }
+
+    fun loginLive2(userName: String, pwd: String) {
+        HttpMethods.INSTANCES.loginLive2(userName, pwd).observe {
+            userLive.value = it
+            Log.d("testlive", it.toString())
+        }
     }
 }
