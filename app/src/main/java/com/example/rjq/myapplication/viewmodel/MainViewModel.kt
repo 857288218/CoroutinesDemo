@@ -15,7 +15,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(app: Application) : BaseViewModel(app) {
 
@@ -25,12 +28,12 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
             viewModelScope.launch {
                 val currentTime = System.currentTimeMillis()
                 Log.d("renjunqingTime", Thread.currentThread().toString())
-                //在viewModelScope/lifecycleScope.launch协程代码块里用launch/async再开协程相当于向该"协程post消息"等待执行,只有当viewModelScope/lifecycleScope协程里的代码执行完再回来按顺序执行launch/async协程里代码
+                //在viewModelScope/lifecycleScope.launch/async协程代码块里用launch/async再开协程相当于向该"协程post消息"等待执行,只有当viewModelScope/lifecycleScope协程里的代码执行完再回来按顺序执行launch/async协程里代码
                 //viewModelScope/lifecycleScope.launch/async会立即执行代码块里的内容,只有当该协程里的代码执行完(包括里面launch/async代码块)或挂起才会执行协程后的代码
-                //CoroutineScope().launch/async需要等其后面的代码执行完再执行该协程里的代码相当于向线程postMessage,可以使用Dispatchers.Main.immediate做到立即执行协程里的代码,viewModelScope/lifecycleScope就使用的Dispatchers.Main.immediate
+                //CoroutineScope().launch/async需要等其后面的代码执行完再执行该协程里的代码相当于向线程postMessage,可以使用Dispatchers.Main.immediate立即执行协程里的代码,viewModelScope/lifecycleScope就使用的Dispatchers.Main.immediate
 
                 //下面例子先打印System.currentTimeMillis() - currentTime,主线程睡3秒(deffer1.await(),deffer2.await()执行的情况下最后才打印System.currentTimeMillis()-currentTime,主线程睡3秒)，
-                //然后第一个launch/async执行:主线程睡3秒,login(挂起函数)切到子线程中执行,该协程会挂起需要等login执行完成后再执行，具体看MainActivity#testSharedFlow注释；如果login不是挂起函数,那么会立即打印"我是第一个login后的代码"
+                //然后第一个launch/async执行:主线程睡3秒,login(挂起函数)切到子线程中执行,该协程会挂起需要等login执行完成后再执行；如果login不是挂起函数,那么会立即打印"我是第一个login后的代码"
                 //当执行到第一个launch/async login时,login切线程去执行网络请求并把该协程挂起等待执行,第二个launch/async会在主线程中执行打印Thread.currentThread().toString(),然后login切线程执行，
                 //由于两个launch/async中的login都在子线程执行，所以两个login后面打印的日志先后顺序不确定,取决于哪个login先执行完后其所在协程恢复执行
                 val deffer1 = async {
@@ -41,16 +44,16 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
                     //切到子线程去执行
                     val data = HttpMethods.INSTANCES.login(userName, pwd)
                     //等待login在子线程执行完，再切回launch/async所在线程(handler.post切)
-                    Log.d("renjunqingTime", "我是第一个login后的代码")
+                    Log.d("renjunqingTime", "我是第一个login后的代码" + Thread.currentThread().toString())
                 }
                 val deffer2 = async {
                     Log.d("renjunqingTime", Thread.currentThread().toString() + "2")
 //                    delay(3000)
                     HttpMethods.INSTANCES.login(userName, pwd)
-                    Log.d("renjunqingTime", "我是第二个login后的代码")
+                    Log.d("renjunqingTime", "我是第二个login后的代码" + Thread.currentThread().toString())
                 }
-//                deffer1.await()
-//                deffer2.await()
+               deffer1.await()
+               deffer2.await()
                 Log.d("renjunqingTime", "${System.currentTimeMillis() - currentTime}")
 //                Thread.sleep(3000)
 //                userLive?.value = data.data
@@ -60,13 +63,25 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
             }
 
             viewModelScope.launch {
-//                delay(500)
+                // delay(500)
                 Log.d("viewModelScopetest", "1")
+                launch {
+                    Log.d("viewModelScopetest", "3")
+                    MutableSharedFlow<String>().collect {
+
+                    }
+                    Log.d("viewModelScopetest", "执行不到")
+                }
+                launch {
+                    Log.d("viewModelScopetest", "4")
+                }
+                Log.d("viewModelScopetest", "2")
             }
 
             viewModelScope.launch {
-                Log.d("viewModelScopetest", "2")
+                Log.d("viewModelScopetest", "5")
             }
+            Log.d("viewModelScopetest", "6")
 
             val handler = CoroutineExceptionHandler { context, exception ->
                 println("Caught $exception")
