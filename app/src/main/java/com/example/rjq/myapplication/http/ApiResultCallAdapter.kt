@@ -1,5 +1,6 @@
 package com.example.rjq.myapplication.http
 
+import com.example.rjq.myapplication.entity.Status
 import com.example.rjq.myapplication.entity.WanResponse
 import okhttp3.Request
 import okio.Timeout
@@ -57,20 +58,27 @@ class ApiResultCall<T>(private val delegate: Call<T>) : Call<T> {
                 if (response.isSuccessful) {
                     // Returns true if the code is in [200..300),which means the request was successfully received,
                     // understood, and accepted.
-                    callback.onResponse(this@ApiResultCall, Response.success(response.body()))
+
+                    val wanResponse = response.body() as WanResponse<*>
+                    if (wanResponse.errorCode == 0) {
+                        wanResponse.status = Status.SUCCESS
+                    } else {
+                        wanResponse.status = Status.ERROR
+                    }
+                    callback.onResponse(this@ApiResultCall, Response.success(wanResponse as T))
                 } else {
-                    //http status错误, means the request not received, understood and accepted.
                     val errorResult =
-                        WanResponse(-1, "服务器状态码异常：" + response.code(), null)
+                        WanResponse(Status.ERROR, -1, "服务器状态码异常：" + response.code(), null)
                     callback.onResponse(this@ApiResultCall, Response.success(errorResult as T))
                 }
             }
 
             /**
-             * 在网络请求中发生了异常，会回调该方法
+             * 无网，网络超时等情况
              */
             override fun onFailure(call: Call<T>, t: Throwable) {
-                val failureApiResult = WanResponse(-1, "当前网络不给力,请确认网络已连接:${t.message}", null)
+                val failureApiResult =
+                    WanResponse(Status.FAILURE, -1, "当前网络不给力,请确认网络已连接:${t.message}", null)
                 callback.onResponse(this@ApiResultCall, Response.success(failureApiResult as T))
             }
         })

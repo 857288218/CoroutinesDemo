@@ -1,6 +1,7 @@
 package com.example.rjq.myapplication.http
 
 import android.util.Log
+import com.example.rjq.myapplication.entity.Status
 import com.example.rjq.myapplication.entity.WanResponse
 import retrofit2.Call
 import retrofit2.CallAdapter
@@ -25,10 +26,21 @@ class LiveDataJaResponseCallAdapter<R>(private val responseType: Type) :
 
                         override fun onResponse(call: Call<R>, response: Response<R>) {
                             if (response.isSuccessful) {
-                                postValue(response.body())
+                                val wanResponse = response.body() as WanResponse<*>
+                                if (wanResponse.errorCode == 0) {
+                                    wanResponse.status = Status.SUCCESS
+                                } else {
+                                    wanResponse.status = Status.ERROR
+                                }
+                                postValue(wanResponse as R)
                             } else {
                                 val errorResult =
-                                    WanResponse(-1, "服务器状态码异常：" + response.code(), null)
+                                    WanResponse(
+                                        Status.ERROR,
+                                        -1,
+                                        "服务器状态码异常：" + response.code(),
+                                        null
+                                    )
                                 postValue(errorResult as R)
                             }
                         }
@@ -36,7 +48,12 @@ class LiveDataJaResponseCallAdapter<R>(private val responseType: Type) :
                         override fun onFailure(call: Call<R>, throwable: Throwable) {
                             Log.e("dev", "LiveDataJaResponseCallAdapter: $throwable")
                             val failureResult =
-                                WanResponse(-1, "当前网络不给力,请确认网络已连接:${throwable.message}", null)
+                                WanResponse(
+                                    Status.FAILURE,
+                                    -1,
+                                    "当前网络不给力,请确认网络已连接:${throwable.message}",
+                                    null
+                                )
                             postValue(failureResult as R)
                         }
                     })

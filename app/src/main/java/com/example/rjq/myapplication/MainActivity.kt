@@ -10,10 +10,12 @@ import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : BaseActivity() {
     private var loadingDialog: LoadingDialog? = null
@@ -100,6 +102,7 @@ class MainActivity : BaseActivity() {
             // BufferOverflow.DROP_LATEST/DROP_OLDEST策略下 某个CoroutineScope内执行完所有emit后collect才会接收到数据,下面例子就是lifecycleScope.launch内所有emit完collect会收到数据,launch内所有emit完会收到数据
             sharedFlow.emit("SharedFlow")
             sharedFlow.emit("SharedFlow2")
+            sharedFlow.emit("SharedFlow7")
             launch {
                 sharedFlow.emit("SharedFlow4")
                 sharedFlow.emit("SharedFlow5")

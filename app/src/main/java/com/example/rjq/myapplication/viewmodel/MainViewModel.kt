@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.rjq.myapplication.BaseApplication
+import com.example.rjq.myapplication.entity.Status
 import com.example.rjq.myapplication.entity.User
 import com.example.rjq.myapplication.entity.WanResponse
 import com.example.rjq.myapplication.http.HttpMethods
@@ -130,10 +131,10 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
     fun loginTest(userName: String, pwd: String): LiveData<WanResponse<User>> {
         viewModelScope.launch {
             val wanResponse = HttpMethods.INSTANCES.login(userName, pwd)
-            if (wanResponse.errorCode == 0) {
+            if (wanResponse.status == Status.SUCCESS) {
                 userLive.value = wanResponse
             } else {
-                //业务错误和请求错误，弹toast
+                // 业务错误和网络错误，弹toast
                 Toast.makeText(BaseApplication.context, wanResponse.errorMsg, Toast.LENGTH_SHORT)
                     .show()
             }

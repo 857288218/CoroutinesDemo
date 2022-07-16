@@ -1,4 +1,24 @@
 package com.example.rjq.myapplication.entity
 
-//errorCode，errorMsg代表业务错误：指服务器正常返回数据(response.isSuccessful)，但是某种业务错误，比如：密码错误
-data class WanResponse<out T>(val errorCode: Int, val errorMsg: String?, val data: T?)
+enum class Status {
+    /**
+     * When the HTTP response was successfully returned by the remote server.
+     * The ResponseCode == HTTP_CODE_OK and the ResponseBodyCode == CODE_OK
+     */
+    SUCCESS,
+
+    /**
+     * When the HTTP response was successfully returned by the remote server.
+     * The ResponseCode == HTTP_CODE_OK or the ResponseBodyCode != CODE_OK
+     */
+    ERROR,
+
+    /**
+     * When the request could not be executed due to cancellation, a connectivity problem,
+     * read/write timeout or invalid responseBody.
+     */
+    FAILURE,
+}
+
+//errorCode，errorMsg代表业务错误和网络错误，具体见ApiResultCallAdapter、LiveDataJaResponseCallAdapter
+data class WanResponse<out T>(var status: Status, val errorCode: Int, val errorMsg: String?, val data: T?)
