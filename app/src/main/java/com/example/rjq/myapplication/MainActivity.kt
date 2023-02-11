@@ -3,12 +3,16 @@ package com.example.rjq.myapplication
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.*
 import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
@@ -22,6 +26,7 @@ class MainActivity : BaseActivity() {
     private lateinit var viewModel: MainViewModel
     private lateinit var sharedFlow: MutableSharedFlow<String>
 
+    @ExperimentalCoroutinesApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -71,6 +76,31 @@ class MainActivity : BaseActivity() {
         testSharedFlow()
         testStateFlow()
         testDataStore()
+
+        lifecycleScope.launch {
+            var i = 0
+            val dispatcher = Dispatchers.Default.limitedParallelism(1)
+            val coroutineScope = CoroutineScope(dispatcher + SupervisorJob())
+            repeat(10000) {
+                CoroutineScope(dispatcher + SupervisorJob()).launch {
+                    i ++
+                }
+            }
+            delay(1000)
+            Log.d("test_limitedParallelism", "$i")
+        }
+
+        val textView = findViewById<TextView>(R.id.text_view)
+        val button = findViewById<Button>(R.id.button)
+        button.setOnClickListener {
+            lifecycleScope.launch {
+                // 使用collect就是三秒收集一条
+                viewModel.timeFlow.collectLatest { time ->
+                    textView.text = time.toString()
+                    delay(3000)
+                }
+            }
+        }
     }
 
     /**
@@ -265,6 +295,7 @@ class MainActivity : BaseActivity() {
                 it[DataStoreConstants.KEY_USER_AGE] = 27
                 it[DataStoreConstants.KEY_USER_NAME] = "ren jun qing"
             }
+
 
             // 读取数据,第一次调用会收到通知,当数据改变时会收到通知;dataStore.data.collect后面的代码不会执行到，同SharedFlow/StateFlow.collect{}一样
             dataStore.data.collect {

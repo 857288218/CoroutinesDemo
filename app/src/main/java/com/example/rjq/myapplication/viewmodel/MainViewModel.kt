@@ -18,10 +18,20 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainViewModel(app: Application) : BaseViewModel(app) {
+
+    val timeFlow = flow {
+        var time = 0
+        while (true) {
+            emit(time)
+            delay(1000)
+            time++
+        }
+    }
 
     fun login(userName: String, pwd: String): LiveData<WanResponse<User>>? {
         if (userLive == null || (userLive.value == null)) {
