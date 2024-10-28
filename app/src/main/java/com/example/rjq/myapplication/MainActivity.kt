@@ -166,7 +166,7 @@ class MainActivity : BaseActivity() {
     }
 
     /**
-     * StateFlow:类似于SharedFlow的一种特殊实现(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST) 如果缓冲区溢出，DROP_OLDEST会丢弃buffer中最老值
+     * StateFlow:类似于SharedFlow的一种特殊实现(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)， on buffer overflow，DROP_OLDEST会丢弃buffer中最老值,add the new value to the buffer.具体见BufferOverflow中注释
      * 需要设置初始值，不会发送相同值
      */
     private fun testStateFlow() {
