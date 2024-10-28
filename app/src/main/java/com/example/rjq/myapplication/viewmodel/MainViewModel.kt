@@ -33,13 +33,17 @@ class MainViewModel(app: Application) : BaseViewModel(app) {
         }
     }
 
+    suspend fun a() {
+
+    }
+
     fun login(userName: String, pwd: String): LiveData<WanResponse<User>>? {
         if (userLive == null || (userLive.value == null)) {
             userLive = MutableLiveData()
             viewModelScope.launch {
                 val currentTime = System.currentTimeMillis()
                 Log.d("renjunqingTime", Thread.currentThread().toString())
-                //在viewModelScope/lifecycleScope.launch/async协程代码块里用launch/async再开协程相当于向该"协程post消息"等待执行,只有当viewModelScope/lifecycleScope协程里的代码执行完再回来按顺序执行launch/async协程里代码
+                //在viewModelScope/lifecycleScope.launch/async协程代码块里用launch/async再开协程相当于向该"协程post消息"等待执行,只有当viewModelScope/lifecycleScope协程里的代码执行完再回来按顺序执行launch/async协程里代码,CoroutineScope().launch/async也是
                 //viewModelScope/lifecycleScope.launch/async如果在主线程中调用会立即执行代码块里的内容,只有当该协程里的代码执行完(包括里面launch/async代码块)或挂起才会执行协程后的代码
                 //CoroutineScope().launch/async需要等其后面的代码执行完再执行该协程里的代码相当于向线程postMessage,可以使用Dispatchers.Main.immediate当在主线程上被调用，它不会被重新调度，而是会被立刻执行,viewModelScope/lifecycleScope就使用的Dispatchers.Main.immediate
                 // 参考：https://itcn.blog/p/0804310534.html
