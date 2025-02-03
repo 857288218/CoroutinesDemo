@@ -6,7 +6,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.datastore.preferences.core.edit
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.rjq.myapplication.progress.LoadingDialog
 import com.example.rjq.myapplication.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -14,12 +19,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : BaseActivity() {
     private var loadingDialog: LoadingDialog? = null
@@ -54,7 +67,7 @@ class MainActivity : BaseActivity() {
             findViewById<TextView>(R.id.result_TV).text = it?.toString()
         })
         findViewById<View>(R.id.click_me_BN).setOnClickListener {
-           // viewModel.loginTest("15620419359", "rjq015")
+            // viewModel.loginTest("15620419359", "rjq015")
             viewModel.login("15620419359", "rjq015")
 //             viewModel.loginLive("15620419359", "rjq015")
 //             viewModel.loginAutoRemoveLive("15620419359", "rjq015")
@@ -83,7 +96,7 @@ class MainActivity : BaseActivity() {
             val coroutineScope = CoroutineScope(dispatcher + SupervisorJob())
             repeat(10000) {
                 CoroutineScope(dispatcher + SupervisorJob()).launch {
-                    i ++
+                    i++
                 }
             }
             delay(1000)
@@ -253,14 +266,14 @@ class MainActivity : BaseActivity() {
                 emit(5)
                 emit(6)
             }.map { i ->
-                delay(1000)
+//                delay(1000)
                 Log.d("flow_test", "Flow Map $i thread:${Thread.currentThread()}")
                 i * 2
             }.flowOn(Dispatchers.Main) //默认情况下Flow数据会运行在调用者的上下文(线程)中,可以用flowOn()来改变上游的上下文，这里的上游是指调用flowOn之前的所有操作符
-                .filter { i ->
-                    Log.d("flow_test", "Flow Filter $i thread:${Thread.currentThread()}")
-                    i % 3 == 0
-                }
+//                .filter { i ->
+//                    Log.d("flow_test", "Flow Filter $i thread:${Thread.currentThread()}")
+//                    i % 3 == 0
+//                }
                 .flowOn(Dispatchers.Default)
                 .onCompletion {
                     //无论前面是否存在异常，它都会被调用
@@ -271,15 +284,22 @@ class MainActivity : BaseActivity() {
                     //Flow从不捕获或处理下游流中发生的异常，它们仅使用catch运算符捕获上游发生的异常
                     Log.d("flow_test", "Flow catch $this thread:${Thread.currentThread()}")
                 }
-            flow.collect { i ->
-                Log.d("flow_test", "Flow collect $i thread:${Thread.currentThread()}")
+//            flow.collect {
+//
+//            }
+            // 当生产数据的速度 > 消费数据的速度时，背压处理可以用collectLatest或conflate
+            // collectLatest函数只接收处理最新的数据。如果有新数据到来了而前一个数据还没处理完，则会将前一个数据剩余的处理逻辑全部取消，从而处理新数据。
+            flow.collectLatest { i ->
+                Log.d("flow_test2", "Flow collect start $i thread:${Thread.currentThread()}")
+                delay(3000)
+                Log.d("flow_test2", "Flow collect end $i")
             }
-            // 同上面写法
-//            flow.collect(object : FlowCollector<Int> {
-//                override suspend fun emit(value: Int) {
-//                    Log.d("flow_test2", "Flow collect $i thread:${Thread.currentThread()}")
-//                }
-//            })
+            // conflate函数:正在处理的数据无论如何都处理完，然后准备去处理下一条数据时，直接处理最新的数据，中间的数据就都丢弃掉了。
+//            flow.conflate().collect { i ->
+//                Log.d("flow_test2", "Flow collect start $i thread:${Thread.currentThread()}")
+//                delay(3000)
+//                Log.d("flow_test2", "Flow collect end $i")
+//            }
         }
     }
 
